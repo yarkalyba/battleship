@@ -1,12 +1,4 @@
 class Ship:
-    """
-    Initialise the attributes of ship
-    :param bow: tuple with coordinates of type int that mean left upper
-    corner of the ship
-    :param horizontal: bool(means the placement direction)
-    :param length: size of the ship
-    """
-
     def __init__(self, length, bow, horizontal):
         self.__length = length
         self.bow = bow
@@ -32,11 +24,11 @@ class Field:
         self.__ships = self.generate_field()
 
     def shoot_at(self, cords):
-        if self.__ships[cords[0]][cords[1]] == " ":
+        if self.__ships[cords[0]][cords[1]] == " " or self.__ships[cords[0]][cords[1]] == "*":
             self.__ships[cords[0]][cords[1]] = "*"
             return False
         else:
-            self.__ships[cords[0]][cords[1]] = "#"
+            self.__ships[cords[0]][cords[1]] = "×"
             return True
 
     def field_without_ships(self):
@@ -44,31 +36,26 @@ class Field:
         battlefield = copy.deepcopy(self.__ships)
         for row in range(len(battlefield)):
             for column in range(len(battlefield)):
-                if battlefield[row][column] == "*" or battlefield[row][
-                    column] == "#":
+                if battlefield[row][column] == "*" or battlefield[row][column] == "×":
                     pass
                 else:
                     battlefield[row][column] = " "
-        return battlefield
+        return self.beautiful_board(battlefield)
 
     def field_with_ships(self):
         import copy
         battlefield = copy.deepcopy(self.__ships)
         for row in range(len(battlefield)):
             for column in range(len(battlefield)):
-                if battlefield[row][column] == "*" or battlefield[row][
-                    column] == "#" or battlefield[row][column] == ' ':
+                if battlefield[row][column] == "*" or battlefield[row][column] == "×" or battlefield[row][column] == ' ':
                     pass
                 else:
                     battlefield[row][column] = "□"
-        return battlefield
+        return self.beautiful_board(battlefield)
 
     def generate_field(self):
         import random
-        borders = (
-            (0, 0), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0),
-            (-1, -1),
-            (0, -1))
+        borders = ((0, 0), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1))
         field = [[" "] * 10 for i in range(10)]
         all_ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
         ship_borders = []
@@ -81,8 +68,7 @@ class Field:
                     column = random.choice(range(10))
                     for length in range(i):
                         for p in borders:
-                            if [column + p[0],
-                                row + length + p[1]] in ship_borders:
+                            if [column + p[0], row + length + p[1]] in ship_borders:
                                 tries += 1
                     if tries == 0:
                         break
@@ -97,8 +83,7 @@ class Field:
                     column = random.choice(range(10 - i))
                     for length in range(i):
                         for p in borders:
-                            if [column + length + p[0],
-                                row + p[1]] in ship_borders:
+                            if [column + length + p[0], row + p[1]] in ship_borders:
                                 tries += 1
                     if tries == 0:
                         break
@@ -108,6 +93,22 @@ class Field:
                     ship_borders.append([column + j, row])
         return field
 
+    @staticmethod
+    def beautiful_board(field):
+        import copy
+        battlefield = copy.deepcopy(field)
+        for i in range(len(battlefield)-1):
+            battlefield[i].insert(0, str(i + 1)+" ")
+        battlefield[9].insert(0, "10")
+
+        battlefield.insert(0, ["  ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J"])
+        for i in range(len(battlefield)):
+            for j in range(11):
+                battlefield[i][j] = battlefield[i][j]+"│"
+        for i in range(1, len(battlefield)+10,2):
+            battlefield.insert(i, "──┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤")
+        battlefield.append("──┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘")
+        return battlefield
 
 class Player:
     def __init__(self, name):
@@ -117,8 +118,11 @@ class Player:
         import string
         a = list(input())
         a[0] = string.ascii_lowercase.index(a[0].lower())
-        a[1] = int(a[1]) - 1
-        return (a[1], a[0])
+        two_char = ""
+        for i in range(1,len(a)):
+            two_char = two_char + a[i]
+        two_char = int(two_char)-1
+        return (two_char, a[0])
 
     def __str__(self):
         return self.__name
@@ -147,13 +151,10 @@ class Game:
 
         print("Welcome in Battleships")
         while True:
-            print("{}'s field:".format(
-                self.__players[opponent(self.__current_player)]))
-            for i in self.__field[
-                opponent(self.__current_player)].field_without_ships():
+            print("{}'s field:".format(self.__players[opponent(self.__current_player)]))
+            for i in self.__field[opponent(self.__current_player)].field_without_ships():
                 print("".join(i))
-            print("{} make a shot:".format(
-                self.__players[self.__current_player]))
+            print("{} make a shot:".format(self.__players[self.__current_player]))
             cords = self.read_position()
 
             hit = self.__field[opponent(self.__current_player)].shoot_at(cords)
@@ -165,8 +166,7 @@ class Game:
             print("{}'s field:".format(self.__players[self.__current_player]))
             for i in self.__field[self.__current_player].field_without_ships():
                 print("".join(i))
-            print("{} make a shot:".format(
-                self.__players[opponent(self.__current_player)]))
+            print("{} make a shot:".format(self.__players[opponent(self.__current_player)]))
             cords = self.read_position()
 
             hit = self.__field[self.__current_player].shoot_at(cords)
@@ -176,18 +176,16 @@ class Game:
             print("You missed, your opponent turn")
 
             if self.is_winner():
-                print("Congrats! {} wins!".format(
-                    self.__players[self.__current_player]))
+                print("Congrats! {} wins!".format(self.__players[self.__current_player]))
                 break
 
     def is_winner(self):
         for i in range(10):
             for j in range(10):
-                if self.__field[self.__current_player].field_with_ships()[i][
-                    j] == "□":
+                if "□" in self.__field[self.__current_player].field_with_ships()[i][j]:
                     return False
         return True
 
 
-game = Game("Oles", "Arman")
+game = Game("Arman", "Rybka")
 game.play()
